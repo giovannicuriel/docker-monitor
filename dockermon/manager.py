@@ -5,6 +5,7 @@ from flask import Blueprint
 from flask import make_response
 from marshmallow import Schema, fields, post_dump, ValidationError
 from dockermon.app import app
+from utils import decode_base64
 
 manager = Blueprint("manager", __name__)
 
@@ -20,13 +21,36 @@ class CreateContainerActionSchema(Schema):
 createActionSchemaList = CreateContainerActionSchema(many=True)
 
 
-def retrieve_headers(request):
+def get_allowed_service(token):
     """
-        Retrieve common headers from HTTP request
-    """
-    headers = {}
+        Parses the authorization token, returning the service to be used when
+        configuring the FIWARE backend
 
-    return headers
+        :param token: JWT token to be parsed
+        :returns: Fiware-service to be used on API calls
+        :raises ValueError: for invalid token received
+    """
+    if not token or len(token) == 0:
+        raise ValueError("Invalid authentication token")
+
+    payload = token.split('.')[1]
+    try:
+        data = json.loads(decode_base64(payload))
+        return data['service']
+    except Exception as ex:
+        raise ValueError("Invalid authentication token - not json object", ex)
+
+
+def init_tenant_context(request, db):
+    try:
+        token = request.headers['authorization']
+    except KeyError:
+        raise HTTPRequestError(401, "No authorization token has been supplied")
+
+    tenant = get_allowed_service(token)
+    init_tenant(tenant, db)
+    return tenant
+
 
 @manager.route("/exec", methods=["POST"])
 def docker_exec():
