@@ -82,4 +82,4 @@ class AlarmHandler:
 
 
 # Alarm handler
-handler = AlarmHandler()
+# handler = AlarmHandler()

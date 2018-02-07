@@ -3,6 +3,7 @@ import logging
 from dockermon.app import app
 from dockermon import metric_handler
 from dockermon import alarm_handler
+from dockermon import manager
 
 # set logger
 logger = logging.getLogger('docker-monitor')
